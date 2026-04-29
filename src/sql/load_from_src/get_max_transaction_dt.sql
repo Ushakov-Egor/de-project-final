@@ -1,0 +1,1 @@
+SELECT MAX(transaction_dt) FROM {table_name};

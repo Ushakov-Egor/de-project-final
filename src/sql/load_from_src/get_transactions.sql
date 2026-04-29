@@ -1,0 +1,1 @@
+SELECT * FROM {table_name} WHERE transaction_dt >= %(low)s AND transaction_dt < %(high)s
