@@ -1,1 +1,0 @@
-select MAX(date_update) from {table_name};

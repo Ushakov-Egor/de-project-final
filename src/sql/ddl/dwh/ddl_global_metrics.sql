@@ -1,13 +1,13 @@
 -- DDL таблицы для витрины global_metrics в слое DWH
 
-'''
-	-- date_update — дата расчёта,
+/*
+	- date_update — дата расчёта,
     - currency_from — код валюты транзакции;
     - amount_total — общая сумма транзакций по валюте в долларах;
     - cnt_transactions — общий объём транзакций по валюте;
     - avg_transactions_per_account — средний объём транзакций с аккаунта;
     - cnt_accounts_make_transactions — количество уникальных аккаунтов с совершёнными транзакциями по валюте.
-'''
+*/
 
 -- drop table if exists VT260224AD30FB__DWH.global_metrics;
 

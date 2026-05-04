@@ -23,35 +23,20 @@ class Loader():
 		# Создание объекта SqlHelper
 		self.sqlhelper = SqlHelper(self._dwh)
 
+	# Метод получения даты за которую нужно загрузить данные из источника
+	def _get_load_date(self) -> date:
+		context = get_current_context()
+		return context['data_interval_start'].date()
+
 	# Метод загрузки таблицы transactions из источника в датафрейм Pandas
 	def get_transactions_data(self, table_name: str) -> pd.DataFrame:
-
-		# Определение периода, за который нужно загрузить данные из источника transactions
-
-		# Нижний порог определяется по DWH
-		sql_max = self.sqlhelper.load_sql("load_from_src/get_max_transaction_dt.sql").format(table_name=f"{self.stg_schema}.{table_name}")     # sql для определения определения даты последней загруженной в DWH транзакции
-		with self._dwh.get_conn() as conn:
-			with conn.cursor() as cursor:
-				cursor.execute(sql_max)
-				low_threshold = cursor.fetchone()[0]
-				# Если таблица в стейджинг-слое пустая, то азпрос вернет low_threshold = None, поэтому произведем проверку условием
-				if low_threshold is None:
-					low_threshold = date(1900, 1, 1)
-				else:
-					low_threshold = low_threshold.date() + timedelta(days=1)
-		# Верхний порог определяется по контекстной дате Airflow
-		context = get_current_context()
-		end_date = context['data_interval_end']
-		high_threshold = end_date.date()
-
-		self.logger.info("Интервал загрузки данных из источника: %s - %s", low_threshold, high_threshold)
-
 		# Загрузка данных из источника
+		self.load_date = self._get_load_date()                                                                                              # дата за которую нужно загрузить данные из источника
 		self.logger.info("Начинаю загрузку таблицы %s из источника", table_name)
 		sql_source = self.sqlhelper.load_sql("load_from_src/get_transactions.sql").format(table_name=f"{self.src_schema}.{table_name}")     # sql для чтения данных из источника
 		try:
 			df = self._db.get_pandas_df(sql_source,
-										parameters={"low": str(low_threshold), "high": str(high_threshold)})
+										parameters={"load_date": str(self.load_date)})
 			self.logger.info("Загружено %d строк из %s", len(df), table_name)
 			return df
 		except Exception as e:
@@ -60,33 +45,13 @@ class Loader():
 
 	# Метод загрузки таблицы currencies из источника в датафрейм Pandas
 	def get_currencies_data(self, table_name:str) -> pd.DataFrame:
-
-		# Определение периода, за который нужно загрузить данные из источника currencies
-
-		# Нижний порог определяется по DWH
-		sql_max = self.sqlhelper.load_sql("load_from_src/get_max_currencies_dt.sql").format(table_name=f"{self.stg_schema}.{table_name}")     # sql для определения определения даты последней загруженной в DWH транзакции
-		with self._dwh.get_conn() as conn:
-			with conn.cursor() as cursor:
-				cursor.execute(sql_max)
-				low_threshold = cursor.fetchone()[0]
-				# Если таблица в стейджинг-слое пустая, то азпрос вернет low_threshold = None, поэтому произведем проверку условием
-				if low_threshold is None:
-					low_threshold = date(1900, 1, 1)
-				else:
-					low_threshold = low_threshold.date() + timedelta(days=1)
-		# Верхний порог определяется по контекстной дате Airflow
-		context = get_current_context()
-		end_date = context['data_interval_end']
-		high_threshold = end_date.date()
-
-		self.logger.info("Интервал загрузки данных из источника: %s - %s", low_threshold, high_threshold)
-
 		# Загрузка данных из источника
+		self.load_date = self._get_load_date()                                                                                            # дата за которую нужно загрузить данные из источника
 		self.logger.info("Начинаю загрузку таблицы %s из источника", table_name)
 		sql_source = self.sqlhelper.load_sql("load_from_src/get_currencies.sql").format(table_name=f"{self.src_schema}.{table_name}")     # sql для чтения данных из источника
 		try:
 			df = self._db.get_pandas_df(sql_source,
-										parameters={"low": str(low_threshold), "high": str(high_threshold)})
+										parameters={"load_date": str(self.load_date)})
 			self.logger.info("Загружено %d строк из %s", len(df), table_name)
 			return df
 		except Exception as e:
@@ -113,21 +78,23 @@ class Loader():
 
 				# Запись лога в DWH
 				self.logger.info("Запись лога в DWH")
+				# self.load_date - дата, за которую выполнена загрузка данных, автоматически тянется из метода по загрузке из таблицы источника
 				load_end = datetime.now()
 				rows_loaded = len(df)
 				status = "SUCCESS"
 				error_message = None
-				self.sqlhelper.write_stg_log(self.stg_schema,'load_log', table_name, load_end, rows_loaded, status, error_message)
+				self.sqlhelper.write_stg_log(self.stg_schema,'load_log', table_name, self.load_date, load_end, rows_loaded, status, error_message)
 
 		except Exception as e:
 			self.logger.error("Ошибка загрузки в хранилище %s: %s", table_name, e)
 
 			# Запись лога в DWH
 			self.logger.info("Запись лога в DWH")
+			# self.load_date - дата, за которую выполнена загрузка данных, автоматически тянется из метода по загрузке из таблицы источника
 			load_end = datetime.now()
 			rows_loaded = 0
 			status = "ERROR"
 			error_message = str(e)
-			self.sqlhelper.write_stg_log(self.stg_schema,'load_log', table_name, load_end, rows_loaded, status, error_message)
+			self.sqlhelper.write_stg_log(self.stg_schema,'load_log', table_name, self.load_date, load_end, rows_loaded, status, error_message)
 
 			raise

@@ -1,6 +1,7 @@
 INSERT INTO {table_name} (
     schema_name, 
-    table_name, 
+    table_name,
+    load_date, 
     load_end, 
     rows_loaded, 
     status, 
@@ -8,7 +9,8 @@ INSERT INTO {table_name} (
 )
 VALUES (
     :schema_name,
-    :table_name, 
+    :table_name,
+    CAST(:load_date AS timestamp),
     CAST(:load_end AS timestamp), 
     :rows_loaded, 
     :status, 

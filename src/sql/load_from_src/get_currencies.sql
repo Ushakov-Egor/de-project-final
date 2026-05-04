@@ -1,1 +1,1 @@
-SELECT * FROM {table_name} WHERE date_update >= %(low)s AND date_update < %(high)s
+SELECT * FROM {table_name} WHERE date_update = %(load_date)s;

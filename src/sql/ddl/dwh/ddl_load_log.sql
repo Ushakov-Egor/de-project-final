@@ -1,16 +1,13 @@
--- DDL таблицы load_log для записи логов о загрузке данных в слой витрин из системы источника
-
--- drop table if exists VT260224AD30FB__DWH.load_log;
-
-create table if not exists VT260224AD30FB__DWH.load_log
+-- 6. DWH-слой: таблица логов load_log
+-- DROP TABLE IF EXISTS VT260224AD30FB__DWH.load_log;
+CREATE TABLE IF NOT EXISTS VT260224AD30FB__DWH.load_log
 (
-	schema_name varchar(100),
-	table_name varchar(100),
-	low_threshold timestamp,
-	high_threshold timestamp,
-	load_end timestamp,
-	status varchar(20),  -- 'SUCCESS', 'ERROR'
-	error_message varchar(1000)
+    schema_name    VARCHAR(100),
+    table_name     VARCHAR(100),
+    load_date      TIMESTAMP,
+    load_end       TIMESTAMP,
+    status         VARCHAR(20),
+    error_message  VARCHAR(1000)
 )
-order by load_end
-segmented by hash(table_name, load_end) all nodes;
+ORDER BY load_end
+SEGMENTED BY HASH(table_name, load_end) ALL NODES;

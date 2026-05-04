@@ -6,6 +6,7 @@ create table if not exists VT260224AD30FB__STAGING.load_log
 (
 	schema_name varchar(100),
 	table_name varchar(100),
+	load_date date,
 	load_end timestamp,
 	rows_loaded integer,
 	status varchar(20),  -- 'SUCCESS', 'ERROR'

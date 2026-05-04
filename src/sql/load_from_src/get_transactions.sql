@@ -1,1 +1,1 @@
-SELECT * FROM {table_name} WHERE transaction_dt >= %(low)s AND transaction_dt < %(high)s
+SELECT * FROM {table_name} WHERE CAST(transaction_dt AS DATE) = CAST(%(load_date)s AS DATE);

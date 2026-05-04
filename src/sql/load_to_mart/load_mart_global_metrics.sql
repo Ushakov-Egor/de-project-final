@@ -20,17 +20,17 @@ USING (
             COUNT(DISTINCT(stg_tr.account_number_from)) AS cnt_accounts_make_transactions
         FROM (
             SELECT *
-            FROM VT260224AD30FB__STAGING.transactions
+            FROM {stg_transactions}
             WHERE account_number_from >= 0
             	AND status = 'done'
-                AND CAST(transaction_dt AS DATE) > CAST(:low_threshold AS DATE) AND CAST(transaction_dt AS DATE) <= CAST(:high_threshold AS DATE)
+                AND CAST(transaction_dt AS DATE) = CAST(:load_date AS DATE)
         ) AS stg_tr
         GROUP BY date_update, currency_from
     ) AS almost_final
     LEFT JOIN (
         SELECT date_update,currency_code, currency_with_div
-        FROM VT260224AD30FB__STAGING.currencies
-        WHERE CAST(date_update AS DATE) > CAST(:low_threshold AS DATE) AND CAST(date_update AS DATE) <= CAST(:high_threshold AS DATE)
+        FROM {stg_currencies}
+        WHERE CAST(date_update AS DATE) = CAST(:load_date AS DATE)
             AND currency_code_with = 420
     ) AS usd_course ON almost_final.currency_from = usd_course.currency_code AND almost_final.date_update = usd_course.date_update
 ) AS source ON target.date_update = source.date_update AND target.currency_from = source.currency_from
